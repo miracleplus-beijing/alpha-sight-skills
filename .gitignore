@@ -1,0 +1,7 @@
+# Ignore generated files and directories
+alpha-sight/papers/*
+alpha-sight/reports/*
+alpha-sight/sandbox/*
+alpha-sight/index.json
+
+.claude/*

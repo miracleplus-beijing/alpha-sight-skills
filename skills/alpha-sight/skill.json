@@ -1,0 +1,158 @@
+{
+  "name": "alpha-sight",
+  "version": "1.0.0",
+  "description": "Scientific Research Engineering Assistant for analyzing arXiv papers and reproducing code",
+  "author": "Alpha Sight Team",
+  "main": "SKILL.md",
+  "triggers": {
+    "keywords": [
+      "arxiv",
+      "arXiv",
+      "paper",
+      "论文",
+      "latest research",
+      "frontiers",
+      "前沿",
+      "reproduce",
+      "复现",
+      "implement",
+      "analyze paper",
+      "分析论文"
+    ],
+    "patterns": [
+      "\\d{4}\\.\\d{4,5}",
+      "arxiv:\\d{4}\\.\\d{4,5}",
+      "arXiv:\\d{4}\\.\\d{4,5}"
+    ],
+    "technical_domains": [
+      "MoE",
+      "Mixture of Experts",
+      "Transformer",
+      "Diffusion",
+      "RL",
+      "Reinforcement Learning",
+      "LLM",
+      "Large Language Model",
+      "BERT",
+      "GPT",
+      "Vision Transformer",
+      "ViT"
+    ]
+  },
+  "parameters": {
+    "depth": {
+      "type": "enum",
+      "values": ["shallow", "medium", "deep"],
+      "default": "medium",
+      "description": "Analysis depth: shallow (5min), medium (15min), deep (30min with reproduction)"
+    },
+    "language": {
+      "type": "enum",
+      "values": ["english", "chinese"],
+      "default": "english",
+      "description": "Report language"
+    },
+    "cleanup": {
+      "type": "enum",
+      "values": ["on-success", "always", "never"],
+      "default": "on-success",
+      "description": "Sandbox cleanup strategy"
+    }
+  },
+  "environment": {
+    "variables": [
+      {
+        "name": "SEMANTIC_SCHOLAR_API_KEY",
+        "required": false,
+        "description": "API key for Semantic Scholar (optional, for higher rate limits)"
+      }
+    ],
+    "config_paths": [
+      "./alpha-sight/.env",
+      "~/.config/alpha-sight/.env"
+    ]
+  },
+  "dependencies": {
+    "python": ">=3.9",
+    "tools": [
+      "uv",
+      "git"
+    ],
+    "optional": [
+      "docker"
+    ]
+  },
+  "directories": {
+    "root": "./alpha-sight",
+    "papers": "./alpha-sight/papers",
+    "reports": "./alpha-sight/reports",
+    "sandbox": "./alpha-sight/sandbox",
+    "index": "./alpha-sight/index.json"
+  },
+  "resources": {
+    "timeout": {
+      "shallow": 300,
+      "medium": 900,
+      "deep": 1800
+    },
+    "memory_limit": "4GB",
+    "disk_limit": "2GB",
+    "max_iterations": 5
+  },
+  "apis": {
+    "arxiv": {
+      "base_url": "http://export.arxiv.org/api/query",
+      "pdf_url": "https://arxiv.org/pdf",
+      "rate_limit": "1 request per 3 seconds"
+    },
+    "semantic_scholar": {
+      "base_url": "https://api.semanticscholar.org",
+      "rate_limit_without_key": "100 requests per 5 minutes",
+      "rate_limit_with_key": "5000 requests per 5 minutes"
+    }
+  },
+  "features": {
+    "paper_acquisition": true,
+    "citation_analysis": true,
+    "project_fit_assessment": true,
+    "code_reproduction": true,
+    "official_repo_clone": true,
+    "self_implementation": true,
+    "context7_integration": true,
+    "history_tracking": true
+  },
+  "scripts": {
+    "arxiv_fetcher": "./scripts/arxiv_fetcher.py",
+    "index_manager": "./scripts/index_manager.py"
+  },
+  "references": {
+    "arxiv_api": "./references/arxiv_api.md",
+    "semantic_scholar_api": "./references/semantic_scholar_api.md"
+  },
+  "examples": [
+    {
+      "input": "Analyze arXiv 2401.12345",
+      "description": "Basic analysis with default parameters"
+    },
+    {
+      "input": "Find latest MoE papers --depth=deep --language=chinese",
+      "description": "Search and deep analysis with Chinese output"
+    },
+    {
+      "input": "Reproduce this paper 2312.xxxxx",
+      "description": "Automatic code reproduction"
+    }
+  ],
+  "tags": [
+    "research",
+    "arxiv",
+    "paper-analysis",
+    "code-reproduction",
+    "scientific-computing",
+    "machine-learning",
+    "deep-learning"
+  ],
+  "license": "MIT",
+  "repository": "https://github.com/your-org/alpha-sight",
+  "documentation": "https://docs.alpha-sight.dev"
+}
