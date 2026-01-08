@@ -15,212 +15,174 @@ This skill should be automatically triggered when the user:
 Parse the following optional parameters from user input:
 
 - `--depth=[shallow|medium|deep]` (default: `medium`)
-  - `shallow`: Abstract and key information only (5 min timeout)
-  - `medium`: Full analysis + project fit assessment (15 min timeout)
-  - `deep`: Full analysis + code reproduction (30 min timeout)
+  - `shallow`: Abstract and key information only
+  - `medium`: Full analysis + project fit assessment
+  - `deep`: Full analysis + code reproduction
 
 - `--language=[english|chinese]` (default: `english`)
   - `english`: Report in English
-  - `chinese`: Report in Chinese with key translations
+  - `chinese`: Report in Chinese
 
 - `--cleanup=[on-success|always|never]` (default: `on-success`)
   - `on-success`: Clean temp files after success
   - `always`: Always clean
   - `never`: Keep all files for debugging
 
-## Environment Setup
-
-### Required Environment Variables
-
-Check for these environment variables in order of priority:
-1. `./alpha-sight/.env` (project-level)
-2. `~/.config/alpha-sight/.env` (global-level)
-3. System environment variables
-
-```bash
-SEMANTIC_SCHOLAR_API_KEY=xxx  # Optional, for citation analysis
-```
-
-### Directory Structure
-
-Ensure the following structure exists (create if missing):
+## Output Directory Structure
 
 ```
-./alpha-sight/
-├── .env                    # Environment configuration
-├── index.json              # Historical records index
-├── papers/                 # PDF storage
-│   └── {arxiv_id}.pdf
-├── reports/                # Analysis reports
-│   └── {arxiv_id}_analysis.md
-└── sandbox/                # Sandbox for reproduction
-    └── {arxiv_id}_reproduction/
-        ├── official_repo/  # Official repository (if available)
-        ├── custom_impl/    # Custom implementation
-        └── .venv/          # Virtual environment
+alpha-sight/
+├── papers/           # PDF file storage
+├── reports/          # Analysis reports
+├── sandbox/          # Code reproduction workspace
+└── index.json        # Paper index
 ```
 
 ## Workflow
 
-### Phase 1: Paper Acquisition (Automatic)
+### Step 1: Parameter Parsing and Environment Setup
+**Instruction:** Parse user input parameters, extract arXiv ID, create necessary directory structure.
 
-1. **Parse User Input**
-   - Extract arXiv ID, keywords, or domain
-   - Parse optional parameters
+1. **Extract arXiv ID**:
+   - Extract ID from URL (if full URL provided)
+   - Clean `arxiv:` prefix
+   - Validate ID format (YYMM.NNNNN or YYMM.NNNNNN)
 
-2. **Fetch Paper Metadata**
-   - Call arXiv API: `http://export.arxiv.org/api/query?id_list={arxiv_id}`
-   - Extract: title, authors, abstract, published_date, categories
+2. **Parse Parameters**:
+   - `--depth=` (default: medium)
+   - `--language=` (default: english)
+   - `--cleanup=` (default: on-success)
 
-3. **Download PDF**
-   - Download from: `https://arxiv.org/pdf/{arxiv_id}.pdf`
-   - Save to: `./alpha-sight/papers/{arxiv_id}.pdf`
+3. **Create Directory Structure**:
+   ```bash
+   mkdir -p alpha-sight/papers alpha-sight/reports alpha-sight/sandbox
+   ```
 
-4. **Check History**
-   - Read `./alpha-sight/index.json`
-   - If paper already analyzed, ask user: "This paper was analyzed on {date}. Re-analyze?"
+### Step 2: Fetch Paper
+**Instruction:** Use arxiv_fetcher.py script to download paper PDF and metadata.
 
-### Phase 2: Initial Analysis (Automatic)
-
-1. **Extract Key Information**
-   - Title, authors, abstract
-   - Published date, categories
-   - Key contributions (3-5 bullet points)
-
-2. **Fetch Citation Data** (if SEMANTIC_SCHOLAR_API_KEY available)
-   - Call Semantic Scholar API: `https://api.semanticscholar.org/v1/paper/arXiv:{arxiv_id}`
-   - Extract: citation count, references, related papers
-
-3. **Generate Initial Report**
-   - Create Markdown report with basic information
-   - Save to: `./alpha-sight/reports/{arxiv_id}_analysis.md`
-
-### Phase 3: Deep Analysis (User Confirmation Required)
-
-**Skip if `depth=shallow`**
-
-1. **Read Paper Content**
-   - Use Read tool to extract text from PDF
-   - Focus on: Method, Algorithm, Implementation sections
-
-2. **Analyze Current Project**
-   - Use Glob to identify tech stack (package.json, requirements.txt, etc.)
-   - Use Grep to search for relevant patterns
-   - Read key configuration files
-
-3. **Generate Project Fit Assessment**
-   - Relevance score (1-10)
-   - Potential application scenarios
-   - Specific improvement suggestions
-
-4. **Create Architecture Comparison**
-   - Generate Mermaid diagram comparing paper method vs. current project
-
-5. **Ask User for Reproduction**
-   - If `depth=shallow`: Skip reproduction
-   - If `depth=medium`: Ask "Would you like to reproduce the code?"
-   - If `depth=deep`: Automatically proceed to reproduction
-
-### Phase 4: Code Reproduction (Conditional)
-
-**Only execute if:**
-- User confirmed reproduction, OR
-- `depth=deep` parameter set
-
-#### Step 1: Find Official Repository
-
-Search for official code in this order:
-
-1. Check arXiv page for "Code" link
-2. Parse PDF for GitHub/GitLab URLs
-3. Query Semantic Scholar API for linked repositories
-4. Search Papers with Code database
-
-#### Step 2a: If Official Repository Found
-
+Execute command:
 ```bash
-cd ./alpha-sight/sandbox/{arxiv_id}_reproduction/
-git clone {repo_url} official_repo
-cd official_repo
-
-# Check for dependency files
-# - requirements.txt
-# - environment.yml
-# - pyproject.toml
-# - setup.py
-
-# Create virtual environment with uv
-uv venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-
-# Install dependencies
-uv pip install -r requirements.txt
-
-# Try to run (with timeout)
-# Record results
+cd .claude/skills/alpha-sight/scripts && python arxiv_fetcher.py {arxiv_id}
 ```
 
-#### Step 2b: If No Official Repository - Self-Implementation Loop
+The script will:
+- Fetch metadata from arXiv API
+- Download PDF to `alpha-sight/papers/{arxiv_id}.pdf`
+- Display: title, authors, abstract, categories
 
-**Maximum 5 iterations:**
+### Step 3: Paper Reading and Analysis
+**Instruction:** Read the downloaded PDF, extract key information and perform initial analysis.
 
-```python
-for iteration in range(1, 6):
-    # 1. Read paper method section
-    method_content = read_paper_section(["Method", "Algorithm", "Implementation"])
+Read file: `alpha-sight/papers/{arxiv_id}.pdf`
 
-    # 2. Identify required libraries
-    required_libs = extract_dependencies(method_content)
+Extract and display:
+1. **Title** and **Author List**
+2. **Publication Date** and **Subject Categories**
+3. **Abstract** (full text)
+4. **Core Contributions** (3-5 bullet points)
+5. **Technical Details** (methods, algorithms, architecture)
 
-    # 3. Query Context7 (if available and needed)
-    if context7_available and needs_documentation(required_libs):
-        docs = query_context7(required_libs)
-    else:
-        docs = None
+### Step 4: Project Fit Assessment
+**Instruction:** Scan current project and evaluate paper's relevance to the project.
 
-    # 4. Generate implementation code
-    code = generate_implementation(
-        paper_content=method_content,
-        documentation=docs,
-        previous_errors=errors_from_last_iteration
-    )
+1. **Scan Project Files**:
+   ```bash
+   find . -name "package.json" -o -name "requirements.txt" -o -name "pyproject.toml" -o -name "*.py" -o -name "*.js" | head -20
+   ```
 
-    # 5. Save code to sandbox
-    save_code(f"./alpha-sight/sandbox/{arxiv_id}_reproduction/custom_impl/")
+2. **Analyze and Provide**:
+   - **Relevance Score** (1-10): Paper's relevance to current project
+   - **Technology Overlap**: Which technologies/concepts overlap with project
+   - **Potential Applications**: How the paper can improve current project
+   - **Implementation Suggestions**: Specific actionable implementation suggestions
 
-    # 6. Run in sandbox with timeout
-    result = run_with_timeout(
-        code=code,
-        timeout=TIMEOUT_LIMITS[depth],
-        memory_limit="4GB"
-    )
+3. **Generate Architecture Comparison**:
+   - Use Mermaid diagram to compare paper architecture vs. project architecture
 
-    # 7. Check result
-    if result.success:
-        log_success(iteration)
-        break
-    else:
-        log_error(iteration, result.error)
-        if iteration == 5:
-            mark_as_partial_completion()
+### Step 5: Code Reproduction
+**Instruction:** Only execute when `depth=deep`. Attempt to reproduce code implementation from the paper.
+
+#### 5.1 Search for Official Repository
+- Check paper for code links
+- Search GitHub / Papers with Code
+
+**If official repository found**:
+```bash
+cd alpha-sight/sandbox && mkdir -p {arxiv_id}_reproduction && cd {arxiv_id}_reproduction && git clone {repo_url} official_repo
 ```
 
-**Context7 Query Strategy:**
-- Only query when specific libraries detected (PyTorch, TensorFlow, JAX, etc.)
-- Query for: API usage, best practices, common errors
-- If Context7 unavailable, skip and use built-in knowledge
+**If no official repository**:
 
-**Resource Limits:**
-- Memory: 4GB
-- Disk: 2GB per sandbox
-- Timeout: Based on `depth` parameter
+Implement from scratch (maximum 5 iterations):
+1. Carefully read paper methodology section
+2. Identify required libraries (PyTorch, TensorFlow, etc.)
+3. Generate implementation code
+4. Save to `alpha-sight/sandbox/{arxiv_id}_reproduction/custom_impl/`
+5. Test (30 minute timeout):
+   ```bash
+   cd alpha-sight/sandbox/{arxiv_id}_reproduction/custom_impl && timeout 1800 python main.py
+   ```
+6. If failed, analyze error and retry (maximum 5 times)
 
-### Phase 5: Report Generation & Archiving
+#### 5.2 Environment Configuration
+Use `uv` to manage Python dependencies:
+```bash
+cd alpha-sight/sandbox/{arxiv_id}_reproduction && uv venv && source .venv/bin/activate
+```
 
-1. **Generate Final Report**
+### Step 6: Generate Analysis Report
+**Instruction:** Create structured analysis report, choose language based on `--language` parameter.
 
+Report path: `alpha-sight/reports/{arxiv_id}_analysis.md`
+
+#### Chinese Report Template (language=chinese):
 ```markdown
-# Paper Analysis Report: {title}
+# 论文深度分析报告：{Title}
+
+## 基本信息
+- arXiv ID: {arxiv_id}
+- 发布日期: {date}
+- 作者: {authors}
+- 分类: {categories}
+
+## 摘要
+{abstract in Chinese if needed}
+
+## 核心贡献
+1. ...
+2. ...
+3. ...
+
+## 技术细节深度分析
+{detailed analysis in Chinese}
+
+## 项目契合度评估
+### 相关性评分：X/10
+{assessment in Chinese}
+
+### 技术重叠
+{technology overlap}
+
+### 潜在应用
+{potential applications}
+
+## 实施建议
+{suggestions in Chinese}
+
+## 代码复现状态
+- 状态: {成功/失败/部分成功}
+- 方法: {官方仓库/自实现}
+- 迭代次数: {iterations}
+- 备注: {notes}
+
+## 架构对比
+{Mermaid diagram}
+```
+
+#### English Report Template (language=english):
+```markdown
+# Paper Analysis Report: {Title}
 
 ## Basic Information
 - arXiv ID: {arxiv_id}
@@ -228,142 +190,115 @@ for iteration in range(1, 6):
 - Authors: {authors}
 - Categories: {categories}
 
+## Abstract
+{original abstract}
+
 ## Core Contributions
-{3-5 bullet points}
+1. ...
+2. ...
+3. ...
 
 ## Technical Details
-{key methods, algorithms, architecture}
+{detailed analysis}
 
 ## Project Fit Assessment
-### Relevance Score: {score}/10
-### Potential Applications
-- {application 1}
-- {application 2}
+### Relevance Score: X/10
+{assessment}
 
-### Architecture Comparison
-```mermaid
-{comparison diagram}
-```
+### Technology Overlap
+{technology overlap}
+
+### Potential Applications
+{potential applications}
 
 ## Implementation Suggestions
-{specific recommendations}
+{suggestions}
 
 ## Reproduction Status
-- [x] Environment setup
-- [x] Core code implementation
-- [x] Experimental validation
+- Status: {success/failed/partial}
+- Method: {official repo/custom implementation}
+- Iterations: {iterations}
+- Notes: {notes}
 
-### Reproduction Method: {official_repo | self_implemented}
-### Iterations: {count}
-### Success Rate: {rate}
-### Notes: {details}
+## Architecture Comparison
+{Mermaid diagram}
 ```
 
-2. **Update index.json**
+### Step 7: Update Index
+**Instruction:** Add paper information to `alpha-sight/index.json` index file.
 
-Add or update entry:
-
-```json
-{
-  "arxiv_id": "{arxiv_id}",
-  "title": "{title}",
-  "authors": ["{author1}", "{author2}"],
-  "published_date": "{date}",
-  "analyzed_date": "{timestamp}",
-  "categories": ["{cat1}", "{cat2}"],
-  "abstract": "{abstract}",
-
-  "analysis": {
-    "depth": "{depth}",
-    "language": "{language}",
-    "relevance_score": {score},
-    "report_path": "./reports/{arxiv_id}_analysis.md",
-    "pdf_path": "./papers/{arxiv_id}.pdf"
-  },
-
-  "reproduction": {
-    "status": "{not_started|in_progress|completed|failed|partial}",
-    "method": "{official_repo|self_implemented|none}",
-    "repo_url": "{url}",
-    "sandbox_path": "./sandbox/{arxiv_id}_reproduction/",
-    "iterations": {count},
-    "success_rate": {rate},
-    "notes": "{details}"
-  },
-
-  "citations": {
-    "cited_by_count": {count},
-    "references_count": {count},
-    "related_papers": ["{id1}", "{id2}"]
-  },
-
-  "tags": ["{tag1}", "{tag2}"],
-  "project_impact": {
-    "applicable": true,
-    "suggestions": ["{suggestion1}", "{suggestion2}"]
-  }
-}
+Execute command:
+```bash
+cd .claude/skills/alpha-sight/scripts && python -c "from index_manager import IndexManager; m = IndexManager(); print('Index updated')"
 ```
 
-3. **Cleanup (Based on --cleanup parameter)**
-   - `on-success`: Remove temp files if successful
-   - `always`: Always remove temp files
-   - `never`: Keep all files
+Index entry contains:
+- **Basic info**: arxiv_id, title, authors, dates, categories
+- **Analysis info**: depth, language, relevance_score, paths
+- **Reproduction info**: status, method, iterations, notes
+- **Tags**: tags, project_impact
 
-## Error Handling
+### Step 8: Clean Temporary Files
+**Instruction:** Clean temporary files based on `--cleanup` parameter.
 
-### Timeout Errors
-- Log to report: "Reproduction timed out after {duration}"
-- Mark status as "partial"
-- Preserve all files for debugging
+Cleanup conditions:
+- `cleanup=always`: Always clean
+- `cleanup=on-success` and reproduction succeeded: Clean
+- `cleanup=never`: Don't clean
 
-### Memory Errors
-- Suggest lighter implementation
-- Reduce batch size or model size
-- Mark status as "failed"
-
-### API Errors
-- arXiv API: Retry up to 3 times with exponential backoff
-- Semantic Scholar: Continue without citation data if fails
-- Context7: Continue without documentation if unavailable
-
-### Git Clone Errors
-- If official repo inaccessible, proceed to self-implementation
-- Log error details in report
-
-## Output Format
-
-### Success Message
+Cleanup command:
+```bash
+rm -rf alpha-sight/sandbox/{arxiv_id}_reproduction/.venv alpha-sight/sandbox/{arxiv_id}_reproduction/temp
 ```
-✓ Paper Analysis Complete
+
+### Step 9: Output Summary
+**Instruction:** Display analysis completion summary to user.
+
+```
+✓ Analysis Complete!
 
 Paper: {title}
 arXiv ID: {arxiv_id}
+Depth: {depth}
+Language: {language}
 Relevance Score: {score}/10
 
-Report: ./alpha-sight/reports/{arxiv_id}_analysis.md
-PDF: ./alpha-sight/papers/{arxiv_id}.pdf
+📄 Report: alpha-sight/reports/{arxiv_id}_analysis.md
+📕 PDF: alpha-sight/papers/{arxiv_id}.pdf
+🗂️ Index: alpha-sight/index.json
 
-{If reproduced:}
-Reproduction: {status}
-Method: {official_repo | self_implemented}
-Code: ./alpha-sight/sandbox/{arxiv_id}_reproduction/
+{If depth=deep:}
+💻 Code: alpha-sight/sandbox/{arxiv_id}_reproduction/
 ```
 
-### Language-Specific Output
-- If `--language=chinese`, translate all output messages to Chinese
-- Keep technical terms in English with Chinese annotations
+## Error Handling
+
+- **Paper not found**: Verify arXiv ID is correct
+- **Timeout**: Mark as partial completion in report
+- **API errors**: Continue execution, skip missing data
+- **Git clone errors**: Switch to custom implementation
+- **Dependency installation failed**: Log error, continue other steps
+
+## Constraints
+
+1. Only process papers from arxiv.org
+2. Use `uv` to manage Python dependencies in sandbox
+3. Resource limits: 4GB memory, 2GB disk, timeout based on depth
+4. Must update index.json after analysis
+5. Preserve sandbox on failure for debugging
+6. Maximum 5 iterations for custom implementation
+7. Report must use specified language
+8. All paths use relative paths (relative to project root)
 
 ## Tools to Use
 
-- **WebFetch**: Fetch arXiv API and Semantic Scholar API
-- **Bash**: Download PDFs, git clone, run sandbox commands
-- **Read**: Read PDF content, configuration files
+- **Bash**: Execute arxiv_fetcher.py, index_manager.py, git clone, sandbox commands
+- **Read**: Read downloaded PDF, configuration files
 - **Write**: Create reports, save code
 - **Glob**: Find project files
 - **Grep**: Search codebase patterns
-- **mcp__context7__resolve-library-id**: Resolve library names
-- **mcp__context7__query-docs**: Query library documentation
+- **mcp__context7__resolve-library-id**: Resolve library names (optional)
+- **mcp__context7__query-docs**: Query library documentation (optional)
 - **AskUserQuestion**: Confirm reproduction (when depth=medium)
 
 ## Important Notes
@@ -371,11 +306,13 @@ Code: ./alpha-sight/sandbox/{arxiv_id}_reproduction/
 1. **Only process papers from arxiv.org** (English papers only)
 2. **Always use `uv` for Python dependency management** in sandbox
 3. **Never exceed resource limits** (4GB memory, 2GB disk, timeout per depth)
-4. **Always update index.json** after each analysis
+4. **Always update index.json** after each analysis using index_manager.py script
 5. **Preserve sandbox on failure** for debugging
 6. **Use Context7 only when available** - gracefully degrade if not
 7. **Maximum 5 iterations** for self-implementation loop
-8. **No user confirmation during iterations** - run automatically
+8. **Always use arxiv_fetcher.py script** to fetch papers
+9. **Always use index_manager.py script** to update index
+10. **Project fit assessment is always performed** regardless of depth level
 
 ## Example Usage
 
