@@ -138,9 +138,13 @@ cd alpha-sight/sandbox/{arxiv_id}_reproduction && uv venv && source .venv/bin/ac
 - 分类: {categories}
 
 ## 摘要
+- 核心创新点: {one sentence summary}
 {abstract in Chinese if needed}
 
-## 核心贡献
+## 论文的Motivation分析
+{分析论文想要解答的核心问题以及驱动解决问题的动力}
+
+## 论文的主要贡献点分析
 1. ...
 2. ...
 3. ...
@@ -148,7 +152,26 @@ cd alpha-sight/sandbox/{arxiv_id}_reproduction && uv venv && source .venv/bin/ac
 ## 技术细节深度分析
 {detailed analysis in Chinese}
 
+## 实验设计与验证分析
+### 核心主张
+{论文的核心假设和主要声明}
+
+### 数据集与基线
+- **数据集**: {dataset names, scale, characteristics}
+- **基线方法**: {baseline methods}
+- **实验环境**: {hardware, software versions}
+
+### 评价指标
+{evaluation metrics and their rationale}
+
+### 实验结果
+{summary of main experimental results and comparison with baselines}
+
+### 结论和定量分析
+{conclusions based on experimental results and key quantitative analysis}
+
 ## 项目契合度评估
+> **注意**: 仅在 `depth=medium` 或 `depth=deep` 时包含此章节
 ### 相关性评分：X/10
 {assessment in Chinese}
 
@@ -182,17 +205,40 @@ cd alpha-sight/sandbox/{arxiv_id}_reproduction && uv venv && source .venv/bin/ac
 - Categories: {categories}
 
 ## Abstract
+- Core Innovation: {one sentence summary}
 {original abstract}
 
-## Core Contributions
+## Motivation Analysis
+{analysis of the core problem the paper aims to solve and the driving forces}
+
+## Main Contributions Analysis
 1. ...
 2. ...
 3. ...
 
-## Technical Details
-{detailed analysis}
+## In-depth Technical Analysis
+{detailed technical analysis}
+
+## Experimental Design and Validation Analysis
+### Core Claims
+{core hypotheses and main claims of the paper}
+
+### Datasets and Baselines
+- **Datasets**: {dataset names, scale, characteristics}
+- **Baseline Methods**: {baseline methods}
+- **Experimental Setup**: {hardware, software versions}
+
+### Evaluation Metrics
+{evaluation metrics and their rationale}
+
+### Experimental Results
+{summary of main experimental results and comparison with baselines}
+
+### Conclusions and Quantitative Analysis
+{conclusions based on experimental results and key quantitative analysis}
 
 ## Project Fit Assessment
+> **Note**: Only included when `depth=medium` or `depth=deep`
 ### Relevance Score: X/10
 {assessment}
 
